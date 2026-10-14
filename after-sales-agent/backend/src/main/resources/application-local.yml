@@ -1,0 +1,23 @@
+  # 本地开发：IDEA 的 Working directory 请设为项目的 backend 目录。
+spring:
+  config:
+    # 显式按 Java Properties 格式读取项目根目录的 .env，不是自动支持所有 dotenv 语法。
+    import: "optional:file:../.env[.properties]"
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 1
+
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false
+
+app:
+  environment: local
+
+logging:
+  level:
+    # 只调整业务包，避免在开发日志中打印 SQL 参数、完整 Prompt 或 HTTP 凭证。
+    com.example.aftersales: DEBUG

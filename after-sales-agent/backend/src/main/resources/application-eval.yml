@@ -1,0 +1,38 @@
+# 独立评测进程使用；连接独立端口、数据库、索引和文件目录。
+spring:
+  config:
+    import: "optional:file:../.env[.properties]"
+  datasource:
+    url: "${EVAL_DATABASE_URL:jdbc:postgresql://localhost:${EVAL_POSTGRES_PORT:15433}/after_sales_eval}"
+    username: "${EVAL_DATABASE_USERNAME:after_sales_eval}"
+    password: "${EVAL_DATABASE_PASSWORD:}"
+    hikari:
+      pool-name: AfterSalesEvalPool
+      maximum-pool-size: 4
+      minimum-idle: 1
+
+server:
+  port: "${EVAL_SERVER_PORT:8081}"
+
+logging:
+  file:
+    name: "${EVAL_LOG_FILE:../data/eval/logs/after-sales-agent-eval.log}"
+
+app:
+  environment: eval
+  ai:
+    mode: "${EVAL_MODEL_MODE:mock}"
+    index-namespace: "${EVAL_INDEX_NAMESPACE:eval-${EVAL_MODEL_MODE:mock}-v1}"
+  document:
+    upload-root: "${EVAL_UPLOAD_ROOT:../data/eval/uploads}"
+  worker:
+    enabled: false
+    agent-concurrency: 1
+    ingestion-concurrency: 1
+    evaluation-concurrency: 1
+  seed:
+    enabled: false
+  evaluation:
+    # 完成 EvaluationRunner 与隔离检查后再启用。
+    enabled: false
+    allow-live: "${EVAL_ALLOW_LIVE:false}"

@@ -1,0 +1,50 @@
+# 开发基础设施：后端在 IDEA/Maven 启动；此文件启动主数据库和可选隔离评测库。
+name: after-sales-agent
+
+services:
+  postgres:
+    image: "${POSTGRES_IMAGE:-pgvector/pgvector:0.8.7-pg17-bookworm}"
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-after_sales}"
+      POSTGRES_USER: "${DATABASE_USERNAME:-after_sales}"
+      POSTGRES_PASSWORD: "${DATABASE_PASSWORD:?Please set DATABASE_PASSWORD in the project .env file}"
+      POSTGRES_INITDB_ARGS: --encoding=UTF8
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  postgres-eval:
+    profiles: [eval]
+    image: "${POSTGRES_IMAGE:-pgvector/pgvector:0.8.7-pg17-bookworm}"
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: after_sales_eval
+      POSTGRES_USER: "${EVAL_DATABASE_USERNAME:-after_sales_eval}"
+      POSTGRES_PASSWORD: "${EVAL_DATABASE_PASSWORD:?Please set EVAL_DATABASE_PASSWORD in the project .env file}"
+      POSTGRES_INITDB_ARGS: --encoding=UTF8
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "127.0.0.1:${EVAL_POSTGRES_PORT:-15433}:5432"
+    volumes:
+      - postgres-eval-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  postgres-data:
+  postgres-eval-data:

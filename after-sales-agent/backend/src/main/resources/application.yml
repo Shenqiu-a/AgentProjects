@@ -1,0 +1,186 @@
+# 公共配置。未显式选择环境时，加载 application-local.yml。
+spring:
+  application:
+    name: after-sales-agent-backend
+  profiles:
+    default: local
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: "${DATABASE_URL:jdbc:postgresql://${DATABASE_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:after_sales}}"
+    username: "${DATABASE_USERNAME:after_sales}"
+    password: "${DATABASE_PASSWORD:}"
+    hikari:
+      pool-name: AfterSalesPool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 3000
+      validation-timeout: 1000
+      max-lifetime: 1800000
+  jdbc:
+    template:
+      query-timeout: 3s
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    encoding: UTF-8
+    validate-on-migrate: true
+    validate-migration-naming: true
+    fail-on-missing-locations: true
+    baseline-on-migrate: false
+    clean-disabled: true
+  sql:
+    init:
+      mode: never
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+  mvc:
+    async:
+      request-timeout: 180s
+  web:
+    error:
+      include-message: never
+      include-binding-errors: never
+      include-stacktrace: never
+      include-exception: false
+  jackson:
+    time-zone: Asia/Shanghai
+    deserialization:
+      fail-on-unknown-properties: true
+    # 保留 null 字段，与 OpenAPI 中 required + nullable 的响应约定一致。
+    default-property-inclusion: always
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+server:
+  address: "${SERVER_ADDRESS:127.0.0.1}"
+  port: "${SERVER_PORT:8080}"
+  shutdown: graceful
+  servlet:
+    session:
+      timeout: 30m
+      tracking-modes: cookie
+      persistent: false
+      cookie:
+        name: JSESSIONID
+        http-only: true
+        same-site: lax
+        secure: false
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health
+    jmx:
+      exposure:
+        exclude: "*"
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+  health:
+    db:
+      enabled: true
+
+# Spring Boot 自带 Logback，无须再维护一份重复的 logback-spring.xml。
+logging:
+  level:
+    root: INFO
+    com.example.aftersales: INFO
+    org.springframework.security: INFO
+    org.springframework.ai: INFO
+  file:
+    name: "${LOG_FILE:../data/logs/after-sales-agent.log}"
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      total-size-cap: 100MB
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX,Asia/Shanghai} %-5level [%thread] %logger{36} [requestId=%X{requestId:-none} runId=%X{runId:-none}] - %msg%n"
+    file: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX,Asia/Shanghai} %-5level [%thread] %logger{36} [requestId=%X{requestId:-none} runId=%X{runId:-none}] - %msg%n"
+
+# 以下 app.* 是项目自定义约定，需要后续通过 @ConfigurationProperties 读取。
+# 配置值本身不会创建模型、执行 Agent、启动 worker、生成种子或放开接口权限。
+app:
+  environment: local
+  business:
+    time-zone: Asia/Shanghai
+  ai:
+    mode: "${MODEL_MODE:mock}"
+    index-namespace: "${INDEX_NAMESPACE:${MODEL_MODE:mock}-v1}"
+    mock:
+      embedding-dimensions: 16
+    chat:
+      provider: "${CHAT_PROVIDER:unconfigured}"
+      base-url: "${CHAT_BASE_URL:}"
+      api-key: "${CHAT_API_KEY:}"
+      model: "${CHAT_MODEL:}"
+      connect-timeout: 5s
+      read-timeout: 30s
+      max-output-tokens: 1200
+    embedding:
+      provider: "${EMBEDDING_PROVIDER:unconfigured}"
+      base-url: "${EMBEDDING_BASE_URL:}"
+      api-key: "${EMBEDDING_API_KEY:}"
+      model: "${EMBEDDING_MODEL:}"
+      # 0 表示尚未选择真实模型；live 适配器实现后必须检查实际返回维度。
+      dimensions: "${EMBEDDING_DIMENSIONS:0}"
+      connect-timeout: 5s
+      read-timeout: 30s
+      batch-size: 16
+  document:
+    upload-root: "${UPLOAD_ROOT:../data/uploads}"
+    max-file-size: 10MB
+    allowed-extensions:
+      - txt
+      - md
+      - pdf
+    chunk-size: 600
+    chunk-overlap: 100
+  rag:
+    mode: HYBRID
+    vector-candidate-count: 20
+    keyword-candidate-count: 20
+    top-k: 4
+    max-chunks-per-document: 2
+    rrf-k: 60
+  agent:
+    max-model-calls: 8
+    max-tool-calls: 8
+    max-identical-tool-calls: 3
+    attempt-timeout: 90s
+    tool-timeout: 3s
+    max-total-tokens: 20000
+    max-input-characters: 2000
+    max-active-runs-per-user: 2
+    history-turns: 6
+    max-model-retries: 1
+    confirmation-ttl: 10m
+    idempotency-retention: 24h
+  worker:
+    # 有实际 worker 实现后再启用，当前不自动执行后台任务。
+    enabled: false
+    agent-concurrency: 2
+    ingestion-concurrency: 1
+    evaluation-concurrency: 1
+    queue-capacity: 20
+    poll-interval: 1s
+    lease-duration: 120s
+    heartbeat-interval: 10s
+  sse:
+    heartbeat-interval: 15s
+    connection-timeout: 180s
+    event-poll-interval: 500ms
+  seed:
+    enabled: false
+  evaluation:
+    enabled: false
+    allow-live: false
+    dataset-version: seed-v1
+    database:
+      url: "${EVAL_DATABASE_URL:jdbc:postgresql://localhost:${EVAL_POSTGRES_PORT:15433}/after_sales_eval}"
+      username: "${EVAL_DATABASE_USERNAME:after_sales_eval}"
+      password: "${EVAL_DATABASE_PASSWORD:}"

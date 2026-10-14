@@ -1,0 +1,32 @@
+# Local credentials and machine-specific configuration.
+**/.env
+**/.env.*
+!**/.env.example
+**/application-*.local.yml
+**/application-*.local.properties
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Editor settings and generated files.
+**/.idea/
+**/.vscode/
+*.iml
+**/target/
+**/node_modules/
+**/dist/
+**/build/
+*.class
+*.log
+*.log.*
+
+# Local runtime data; controlled fixtures remain tracked.
+**/data/uploads/
+**/data/logs/
+**/data/eval/
+**/data/local/
+
+# Operating system files.
+.DS_Store
+Thumbs.db

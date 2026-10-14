@@ -1,0 +1,42 @@
+# 集成测试使用 @ActiveProfiles("test")；普通单元测试无需启动 Spring/数据库。
+spring:
+  config:
+    import: "optional:file:../.env[.properties]"
+  datasource:
+    # 故意不用 DATABASE_URL，防止测试误连本地开发数据库。
+    url: "${TEST_DATABASE_URL:jdbc:postgresql://localhost:${EVAL_POSTGRES_PORT:15433}/after_sales_eval}"
+    username: "${TEST_DATABASE_USERNAME:${EVAL_DATABASE_USERNAME:after_sales_eval}}"
+    password: "${TEST_DATABASE_PASSWORD:${EVAL_DATABASE_PASSWORD:}}"
+    hikari:
+      pool-name: AfterSalesTestPool
+      maximum-pool-size: 2
+      minimum-idle: 0
+
+server:
+  port: 0
+  servlet:
+    session:
+      cookie:
+        secure: false
+
+logging:
+  level:
+    root: WARN
+    com.example.aftersales: INFO
+  file:
+    name: ./target/test-logs/after-sales-agent-test.log
+
+app:
+  environment: test
+  ai:
+    mode: mock
+    index-namespace: test-mock-v1
+  document:
+    upload-root: ./target/test-uploads
+  worker:
+    enabled: false
+  seed:
+    enabled: false
+  evaluation:
+    enabled: false
+    allow-live: false

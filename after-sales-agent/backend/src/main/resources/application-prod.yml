@@ -1,0 +1,41 @@
+# 部署模板：显式通过系统/容器环境变量提供数据库配置，不读取本地 .env。
+spring:
+  datasource:
+    url: "${DATABASE_URL}"
+    username: "${DATABASE_USERNAME}"
+    password: "${DATABASE_PASSWORD}"
+    hikari:
+      maximum-pool-size: "${DATABASE_POOL_SIZE:10}"
+      minimum-idle: 2
+
+server:
+  address: "${SERVER_ADDRESS:0.0.0.0}"
+  servlet:
+    session:
+      cookie:
+        secure: true
+  # 仅在已配置可信反向代理时显式覆盖此值。
+  forward-headers-strategy: none
+
+logging:
+  level:
+    root: INFO
+    com.example.aftersales: INFO
+  file:
+    name: "${LOG_FILE:./data/logs/after-sales-agent.log}"
+  structured:
+    format:
+      console: ecs
+    ecs:
+      service:
+        environment: prod
+
+app:
+  environment: prod
+  document:
+    upload-root: "${UPLOAD_ROOT:./data/uploads}"
+  seed:
+    enabled: false
+  evaluation:
+    enabled: false
+    allow-live: false
