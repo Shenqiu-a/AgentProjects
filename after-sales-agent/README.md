@@ -1,10 +1,10 @@
 # 售后客服与工单 Agent
 
-Java 21、Spring Boot 4.0.8、Spring AI 2.0.1。当前已有项目目录、Maven 依赖、启动类、基础配置、18 张业务表与本地样例；业务接口、模型适配器、登录认证和 worker 按需求文档逐步开发。
+Java 21、Spring Boot 4.0.8、Spring AI 2.0.1。当前已有项目目录、Maven 依赖、启动类、基础配置、18 张业务表与本地样例，以及 Cookie Session + CSRF 登录模块；订单/工单等业务接口、模型适配器和 worker 按需求文档逐步开发。
 
 2026-10-14：已在本机 `after_sales` 执行 V2—V5 建表并导入 3 个用户、2 个商品、2 份政策、8 个订单、7 份知识文档与 1 张静态测试工单。账号密码位置、表用途、查询和复现命令见 [数据库与测试数据](./docs/数据库与测试数据.md)。`after_sales_eval` 本次未改动。
 
-下一步学习登录模块：见 [登录模块开发指南](./docs/登录模块开发指南.md)，包含六份通过编译检查的 Java 参考代码、文件关系和接口联调步骤。教程示例尚未写入业务源码。
+登录模块已写入 Backend 源码；学习文件关系和接口联调步骤可参考 [登录模块开发指南](./docs/登录模块开发指南.md)。Vue 3 + TypeScript 前端位于 `frontend`，包含登录、会话恢复、当前账号展示与退出，启动和代码结构见 [前端说明](./frontend/README.md)。
 
 2026-10-14：当前电脑的原生 PostgreSQL 18 已安装 pgvector 0.8.7，并在两个项目数据库中启用，详见 [安装与验证记录](./docs/pgvector安装记录.md)。下方 Compose 步骤用于创建容器环境；沿用当前本机数据库时可直接从 backend 启动应用。
 
@@ -47,7 +47,7 @@ mvn spring-boot:run
 
 默认 local 环境、8080 端口。应用连接数据库后，Flyway 执行扩展和建表迁移；测试数据需要显式执行初始化脚本。可以访问 `http://localhost:8080/actuator/health` 检查 Spring Boot 基础健康状态。
 
-`/actuator/health` 是框架端点；需求中的 `/api/v1/health` 和其他业务接口仍需实现。业务安全配置尚未编写时，Spring Security 使用默认保护规则和临时开发登录用户。
+`/actuator/health` 是框架端点；需求中的 `/api/v1/health` 和其他业务接口仍需实现。当前已使用数据库账号认证；前端通过 Vite 代理 `/api` 到 Backend，访问前端的 `http://127.0.0.1:5173` 登录。
 
 ## 评测数据库
 
