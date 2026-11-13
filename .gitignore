@@ -2,6 +2,7 @@
 **/.env
 **/.env.*
 !**/.env.example
+!**/.env.microservices.example
 **/application-*.local.yml
 **/application-*.local.properties
 *.pem
@@ -30,3 +31,6 @@
 # Operating system files.
 .DS_Store
 Thumbs.db
+
+# Local database backups.
+/数据库备份/

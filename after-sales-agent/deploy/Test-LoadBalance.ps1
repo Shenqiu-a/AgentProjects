@@ -1,9 +1,9 @@
 #requires -Version 7.0
 [CmdletBinding()]
 param(
-    [string]$BaseUrl = 'http://127.0.0.1:18080',
+    [string]$BaseUrl = 'http://127.0.0.1:8080',
     [ValidateRange(3, 100)][int]$Requests = 18,
-    [ValidateRange(1, 20)][int]$ExpectedInstances = 3,
+    [ValidateRange(1, 20)][int]$ExpectedInstances = 1,
     [switch]$CheckSharedCsrf
 )
 $ErrorActionPreference = 'Stop'

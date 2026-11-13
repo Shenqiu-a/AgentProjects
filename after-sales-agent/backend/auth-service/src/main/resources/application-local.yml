@@ -1,0 +1,1 @@
+# 本地配置已统一放在 application.yml；从项目 .env.microservices 读取。

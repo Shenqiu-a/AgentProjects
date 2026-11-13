@@ -1,0 +1,14 @@
+# 必须显式提供隔离的认证评测库，禁止沿用旧单体 after_sales_eval。
+spring:
+  datasource:
+    url: "${AUTH_EVAL_DATABASE_URL}"
+    username: "${AUTH_EVAL_DATABASE_USERNAME}"
+    password: "${AUTH_EVAL_DATABASE_PASSWORD}"
+  session:
+    data:
+      redis:
+        namespace: after-sales:microservices:eval:session
+app:
+  security:
+    login-rate-limit:
+      namespace: after-sales:microservices:eval:login-limit

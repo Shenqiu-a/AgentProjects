@@ -42,7 +42,7 @@ public class DatabaseSetup {
         }
         if (!action.equals("verify")) {
             Flyway flyway = Flyway.configure().dataSource(url, jdbc.getProperty("user"), jdbc.getProperty("password"))
-                .locations("filesystem:" + root.resolve("backend/src/main/resources/db/migration").toString().replace('\\', '/'))
+                .locations("filesystem:" + root.resolve("backend/legacy-db/migration").toString().replace('\\', '/'))
                 .schemas("public").defaultSchema("public").encoding("UTF-8").validateMigrationNaming(true)
                 .baselineOnMigrate(false).cleanDisabled(true).load();
             flyway.migrate();

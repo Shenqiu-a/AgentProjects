@@ -1,17 +1,22 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, type ProxyOptions } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig(({ mode }) => {
-  // BACKEND_URL 仅供开发服务器使用，不会打包到浏览器。
   const env = loadEnv(mode, process.cwd(), '')
-  const proxy = {
-    '/api': {
-      target: env.BACKEND_URL || 'http://127.0.0.1:8080',
-      changeOrigin: true,
-      // 浏览器始终只与前端同源地址交换 Cookie。
-      cookieDomainRewrite: '',
-    },
-  }
+  const direct = env.MICROSERVICES_DIRECT === 'true'
+  const rule = (target: string) => ({
+    target,
+    changeOrigin: true,
+    cookieDomainRewrite: '',
+  })
+  const proxy: Record<string, ProxyOptions> = direct
+    ? {
+        '/api/v1/auth': rule('http://127.0.0.1:8081'),
+        '/api/v1/orders': rule('http://127.0.0.1:8082'),
+        '/api/v1/knowledge': rule('http://127.0.0.1:8083'),
+        '/api': rule('http://127.0.0.1:8084'),
+      }
+    : { '/api': rule(env.BACKEND_URL || 'http://127.0.0.1:8080') }
   return {
     plugins: [vue()],
     server: { port: 5173, strictPort: true, proxy },

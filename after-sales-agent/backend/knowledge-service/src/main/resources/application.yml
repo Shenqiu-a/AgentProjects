@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: knowledge-service
+  config:
+    import: "optional:file:.env.microservices[.properties],optional:file:../../.env.microservices[.properties]"
+  datasource:
+    url: "${KNOWLEDGE_DATABASE_URL:jdbc:postgresql://127.0.0.1:55433/after_sales_knowledge}"
+    username: "${KNOWLEDGE_DATABASE_USERNAME:after_sales_knowledge}"
+    password: "${KNOWLEDGE_DATABASE_PASSWORD:}"
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 0
+      connection-timeout: 3000
+  jdbc:
+    template:
+      query-timeout: 3s
+  flyway:
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    validate-migration-naming: true
+    baseline-on-migrate: false
+    clean-disabled: true
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  web:
+    error:
+      include-message: never
+      include-stacktrace: never
+
+server:
+  address: "${SERVER_ADDRESS:127.0.0.1}"
+  port: "${SERVER_PORT:8083}"
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+
+app:
+  services:
+    auth-url: "${AUTH_SERVICE_URL:http://127.0.0.1:8081}"
+    auth-token: "${SERVICE_AUTH_TOKEN:}"
+  document:
+    upload-root: "${UPLOAD_ROOT:../../data/uploads}"
+

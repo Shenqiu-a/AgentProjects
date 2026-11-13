@@ -1,0 +1,11 @@
+.git
+.env
+.env.*
+!.env.microservices.example
+**/target
+**/node_modules
+**/.idea
+data
+frontend
+docs
+deploy/legacy

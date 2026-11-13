@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: order-service
+  config:
+    import: "optional:file:.env.microservices[.properties],optional:file:../../.env.microservices[.properties]"
+  datasource:
+    url: "${ORDER_DATABASE_URL:jdbc:postgresql://127.0.0.1:55432/after_sales_order}"
+    username: "${ORDER_DATABASE_USERNAME:after_sales_order}"
+    password: "${ORDER_DATABASE_PASSWORD:}"
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 0
+      connection-timeout: 3000
+  jdbc:
+    template:
+      query-timeout: 3s
+  flyway:
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    validate-migration-naming: true
+    baseline-on-migrate: false
+    clean-disabled: true
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  web:
+    error:
+      include-message: never
+      include-stacktrace: never
+
+server:
+  address: "${SERVER_ADDRESS:127.0.0.1}"
+  port: "${SERVER_PORT:8082}"
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+
+app:
+  services:
+    auth-url: "${AUTH_SERVICE_URL:http://127.0.0.1:8081}"
+    auth-token: "${SERVICE_AUTH_TOKEN:}"
+
