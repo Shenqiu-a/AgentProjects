@@ -1,6 +1,8 @@
 package com.example.aftersales.common;
 
+import com.example.aftersales.security.LoginRateLimitException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
@@ -21,6 +23,15 @@ public class ApiExceptionHandler {
     @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
     public ResponseEntity<?> invalidRequest(Exception exception, HttpServletRequest request) {
         return ResponseEntity.badRequest().body(ApiResponses.error("VALIDATION_ERROR", "请检查请求字段和格式", request));
+    }
+
+    @ExceptionHandler(LoginRateLimitException.class)
+    public ResponseEntity<?> loginRateLimited(LoginRateLimitException exception,
+                                              HttpServletRequest request) {
+        return ResponseEntity.status(429)
+                .header(HttpHeaders.RETRY_AFTER, Long.toString(exception.retryAfterSeconds()))
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .body(ApiResponses.error("LOGIN_RATE_LIMITED", "登录操作过于频繁，请稍后重试", request));
     }
 
     @ExceptionHandler({InternalAuthenticationServiceException.class})

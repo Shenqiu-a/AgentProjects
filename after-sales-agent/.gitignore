@@ -24,3 +24,6 @@
 # 操作系统文件。
 .DS_Store
 Thumbs.db
+
+# 本地镜像构建输入，不提交打包后的 JAR。
+/deploy/image/*.jar

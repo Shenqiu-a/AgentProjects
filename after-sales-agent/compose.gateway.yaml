@@ -1,0 +1,37 @@
+# 与 compose.yaml、compose.image.yaml 一起使用；入口只发布 Nginx。
+services:
+  backend:
+    pull_policy: never
+    ports: !reset []
+    networks:
+      - default
+      - proxy
+    environment:
+      SERVER_FORWARD_HEADERS_STRATEGY: native
+      SERVER_TOMCAT_REMOTEIP_REMOTE_IP_HEADER: X-Forwarded-For
+      SERVER_TOMCAT_REMOTEIP_PROTOCOL_HEADER: X-Forwarded-Proto
+      SERVER_TOMCAT_REMOTEIP_INTERNAL_PROXIES: '172[.]30[.]67[.]10'
+
+  nginx:
+    image: "${GATEWAY_IMAGE:-after-sales-agent-gateway:1.0.0}"
+    pull_policy: never
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${GATEWAY_PORT:-18080}:80"
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      proxy:
+        ipv4_address: 172.30.67.10
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  proxy:
+    ipam:
+      config:
+        - subnet: 172.30.67.0/24

@@ -34,15 +34,18 @@ public class AuthController {
     private final SessionAuthenticationStrategy sessionStrategy;
     private final SecurityContextRepository contextRepository;
     private final AppUserRepository users;
+    private final LoginRateLimiter loginRateLimiter;
 
     public AuthController(AuthenticationManager authenticationManager,
                           SessionAuthenticationStrategy sessionAuthenticationStrategy,
                           SecurityContextRepository contextRepository,
-                          AppUserRepository users) {
+                          AppUserRepository users,
+                          LoginRateLimiter loginRateLimiter) {
         this.authenticationManager = authenticationManager;
         this.sessionStrategy = sessionAuthenticationStrategy;
         this.contextRepository = contextRepository;
         this.users = users;
+        this.loginRateLimiter = loginRateLimiter;
     }
 
     @GetMapping("/csrf")
@@ -54,6 +57,9 @@ public class AuthController {
     @PostMapping("/login")
     public Map<String, Object> login (@Valid @RequestBody LoginRequest body,
                                       HttpServletRequest request, HttpServletResponse response) {
+        // 在查询用户和 BCrypt 校验前限流；拒绝时不清理已有会话。
+        loginRateLimiter.check(request.getRemoteAddr(), body.username());
+
         try {
             // Bcrypt 密码输入有 72 字节上限，不能静默截断后验证
             if (body.password().getBytes(StandardCharsets.UTF_8).length > 72) {

@@ -1,0 +1,34 @@
+services:
+  backend:
+    image: maven:3.10.0-eclipse-temurin-21
+    working_dir: /workspace/backend
+
+    # 将 Windows 项目目录挂载进容器
+    volumes:
+      - .:/workspace
+      - maven-cache:/root/.m2
+
+    env_file:
+      - .env
+
+    environment:
+      SERVER_ADDRESS: "0.0.0.0"
+      SERVER_PORT: "8080"
+      DATABASE_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB:-after_sales}"
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      SPRING_DATA_REDIS_PASSWORD: "${REDIS_PASSWORD:-}"
+
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    command: ["mvn", "-B", "spring-boot:run"]
+
+volumes:
+  maven-cache:

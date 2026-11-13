@@ -3,6 +3,8 @@ package com.example.aftersales.security;
 import com.example.aftersales.common.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,6 +25,7 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
+import org.springframework.session.web.http.SessionRepositoryFilter;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.security.web.csrf.CsrfException;
 
@@ -37,7 +40,15 @@ import java.util.*;
 
 @Configuration
 @EnableMethodSecurity
+@EnableConfigurationProperties(LoginRateLimitProperties.class)
 public class SecurityConfig {
+
+    @Bean
+    FilterRegistrationBean<RedisAvailabilityFilter> redisAvailabilityFilter(ObjectMapper json) {
+        var registration = new FilterRegistrationBean<>(new RedisAvailabilityFilter(json));
+        registration.setOrder(SessionRepositoryFilter.DEFAULT_ORDER - 1);
+        return registration;
+    }
 
     @Bean
     PasswordEncoder passwordEncoder() {

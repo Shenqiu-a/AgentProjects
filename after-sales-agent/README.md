@@ -4,6 +4,8 @@ Java 21、Spring Boot 4.0.8、Spring AI 2.0.1。当前已有项目目录、Maven
 
 2026-10-14：已在本机 `after_sales` 执行 V2—V5 建表并导入 3 个用户、2 个商品、2 份政策、8 个订单、7 份知识文档与 1 张静态测试工单。账号密码位置、表用途、查询和复现命令见 [数据库与测试数据](./docs/数据库与测试数据.md)。`after_sales_eval` 本次未改动。
 
+登录模块已接入 Redis 分布式限流和共享 Session，支持登录后端多实例；配置、代理信任和验证步骤见 [登录限流与多实例部署](./docs/登录限流与多实例部署.md)。
+
 登录模块已写入 Backend 源码；学习文件关系和接口联调步骤可参考 [登录模块开发指南](./docs/登录模块开发指南.md)。Vue 3 + TypeScript 前端位于 `frontend`，包含登录、会话恢复、当前账号展示与退出，启动和代码结构见 [前端说明](./frontend/README.md)。
 
 2026-10-14：当前电脑的原生 PostgreSQL 18 已安装 pgvector 0.8.7，并在两个项目数据库中启用，详见 [安装与验证记录](./docs/pgvector安装记录.md)。下方 Compose 步骤用于创建容器环境；沿用当前本机数据库时可直接从 backend 启动应用。
@@ -19,7 +21,7 @@ Java 21、Spring Boot 4.0.8、Spring AI 2.0.1。当前已有项目目录、Maven
 | `backend/src/test/resources/application-test.yml` | 集成测试环境，强制 mock、独立测试数据源 |
 | `backend/src/main/resources/db/migration/V1__enable_pgvector.sql` | Flyway 首次迁移，仅启用 vector 扩展 |
 | `.env.example` | 本地参数示例，无真实密钥 |
-| `compose.yaml` | PostgreSQL 17＋pgvector 0.8.7，主库与可选评测库 |
+| `compose.yaml` | PostgreSQL 17＋pgvector 0.8.7、Redis 7.4.12，主库与可选评测库 |
 | `.gitignore` | 排除凭证、IDE 文件、构建产物与运行数据 |
 
 详细使用方法、配置优先级、技术解释和排错说明见 [配置说明](./docs/配置说明.md)。
@@ -32,10 +34,10 @@ Java 21、Spring Boot 4.0.8、Spring AI 2.0.1。当前已有项目目录、Maven
 Copy-Item .env.example .env
 ```
 
-编辑 `.env`，至少修改 DATABASE_PASSWORD 和 EVAL_DATABASE_PASSWORD。然后启动主数据库：
+编辑 `.env`，至少修改 DATABASE_PASSWORD 和 EVAL_DATABASE_PASSWORD。然后启动主数据库和 Redis：
 
 ```powershell
-docker compose up -d --wait postgres
+docker compose up -d --wait postgres redis
 ```
 
 后端始终以 backend 为工作目录启动：
@@ -72,3 +74,7 @@ mvn spring-boot:run '-Dspring-boot.run.profiles=eval'
 - `MODEL_MODE=mock` 是后续适配器的模式选择值，不表示当前已有 mock Agent 能力。
 - `.env` 由 Compose 自动读取；本项目的 local/eval/test 配置通过显式 import 读取，格式限制见配置说明。
 - 不提交真实密钥；不把真实模型调用、Embedding 调用和 mock 数据混为一谈。
+
+## JAR 镜像、Nginx 与 Portainer
+
+多实例镜像部署、统一入口和网页管理见 [镜像多实例与 Portainer](./docs/镜像多实例与Portainer.md)。

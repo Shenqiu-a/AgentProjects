@@ -1,0 +1,27 @@
+# 管理面独立于业务 Stack；仅开放本机 HTTPS 管理端口。
+name: after-sales-management
+services:
+  portainer:
+    image: "${PORTAINER_IMAGE:-portainer/portainer-ce:lts}"
+    container_name: after-sales-portainer
+    restart: unless-stopped
+    command:
+      - --admin-password-file
+      - /run/secrets/portainer_admin_password
+      - -H
+      - unix:///var/run/docker.sock
+      - --http-disabled
+    ports:
+      - "127.0.0.1:${PORTAINER_PORT:-9443}:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer-data:/data
+    secrets:
+      - portainer_admin_password
+
+volumes:
+  portainer-data:
+
+secrets:
+  portainer_admin_password:
+    file: ./data/local/portainer-admin.password

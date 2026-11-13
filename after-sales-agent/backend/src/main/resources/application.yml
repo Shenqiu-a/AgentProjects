@@ -16,6 +16,20 @@ spring:
       connection-timeout: 3000
       validation-timeout: 1000
       max-lifetime: 1800000
+  data:
+    redis:
+      host: "${REDIS_HOST:127.0.0.1}"
+      port: "${REDIS_PORT:6379}"
+      password: "${REDIS_PASSWORD:}"
+      database: 0
+      connect-timeout: 2s
+      timeout: 1s
+  session:
+    timeout: 30m
+    data:
+      redis:
+        namespace: "after-sales:${app.environment}:session"
+        repository-type: default
   jdbc:
     template:
       query-timeout: 3s
@@ -184,3 +198,18 @@ app:
       url: "${EVAL_DATABASE_URL:jdbc:postgresql://localhost:${EVAL_POSTGRES_PORT:15433}/after_sales_eval}"
       username: "${EVAL_DATABASE_USERNAME:after_sales_eval}"
       password: "${EVAL_DATABASE_PASSWORD:}"
+  security:
+    login-rate-limit:
+      namespace: "after-sales:${app.environment}:login-limit"
+
+      ip:
+        limit: 30
+        window-seconds: 60
+
+      account-ip:
+        limit: 5
+        window-seconds: 300
+
+      account:
+        limit: 20
+        window-seconds: 300

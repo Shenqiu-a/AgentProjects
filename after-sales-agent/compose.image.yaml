@@ -1,0 +1,38 @@
+services:
+  backend:
+    image: "${APP_IMAGE:-after-sales-agent:1.0.0}"
+    scale: ${APP_REPLICAS:-3}
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      # 本机使用 HTTP 演示；正式部署再配置 prod 和 HTTPS
+      SPRING_PROFILES_ACTIVE: local
+      SERVER_ADDRESS: "0.0.0.0"
+      SERVER_PORT: "8080"
+
+      DATABASE_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB:-after_sales}"
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      SPRING_DATA_REDIS_PASSWORD: "${REDIS_PASSWORD:-}"
+
+    # 每个实例自动分配一个 Windows 端口
+    ports:
+      - target: 8080
+        host_ip: "127.0.0.1"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    stop_grace_period: 30s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

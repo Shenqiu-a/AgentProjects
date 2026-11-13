@@ -14,8 +14,13 @@ server:
     session:
       cookie:
         secure: true
-  # 仅在已配置可信反向代理时显式覆盖此值。
-  forward-headers-strategy: none
+  # 代理模式须同时设置 native 和可信代理地址，默认不接受转发头。
+  forward-headers-strategy: "${FORWARD_HEADERS_STRATEGY:none}"
+  tomcat:
+    remoteip:
+      remote-ip-header: X-Forwarded-For
+      protocol-header: X-Forwarded-Proto
+      internal-proxies: "${TRUSTED_PROXY_PATTERN:^$}"
 
 logging:
   level:
