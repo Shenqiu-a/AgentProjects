@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+// Redis 会话访问出错怎么办？ 自定义过滤器处理
 /** 在 Spring Session 外层处理 Redis 故障，覆盖 CSRF/会话读取和响应提交阶段。 */
 public class RedisAvailabilityFilter extends OncePerRequestFilter {
 

@@ -65,6 +65,7 @@ public class AuthController {
             if (body.password().getBytes(StandardCharsets.UTF_8).length > 72) {
                 throw new BadCredentialsException("Invalid credentials");
             }
+            // 显式保存身份 在 Security Config 中，通过.requireExplicitSave(true)打开了显式保存，所以认证成功后需要手动调用，显式保存一下
             var token = UsernamePasswordAuthenticationToken.unauthenticated(body.username, body.password);
             Authentication authenticate = authenticationManager.authenticate(token);
             UserView user = activeUser(authenticate.getName());
