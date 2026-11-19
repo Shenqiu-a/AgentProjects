@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
   const proxy: Record<string, ProxyOptions> = direct
     ? {
         '/api/v1/auth': rule('http://127.0.0.1:8081'),
+		'/api/v1/products': rule('http://127.0.0.1:8082'),
         '/api/v1/orders': rule('http://127.0.0.1:8082'),
         '/api/v1/knowledge': rule('http://127.0.0.1:8083'),
         '/api': rule('http://127.0.0.1:8084'),

@@ -82,6 +82,7 @@ services:
       ORDER_DATABASE_URL: jdbc:postgresql://order-db:5432/after_sales_order
       ORDER_DATABASE_USERNAME: after_sales_order
       ORDER_DATABASE_PASSWORD: "${ORDER_DATABASE_PASSWORD}"
+      AGENT_SERVICE_URL: http://agent-service:8080
     depends_on:
       order-db:
         condition: service_healthy

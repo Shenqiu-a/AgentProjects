@@ -1,0 +1,215 @@
+# 独立项目名与命名卷，不复用旧单体数据库。使用 scripts/Start-Microservices.ps1 启动。
+name: after-sales-microservices
+x-app: &app
+  restart: unless-stopped
+  environment: &app-env
+    SERVER_ADDRESS: 0.0.0.0
+    SERVER_PORT: "8080"
+    AUTH_SERVICE_URL: http://auth-service:8080
+    SERVICE_AUTH_TOKEN: "${SERVICE_AUTH_TOKEN:?Set SERVICE_AUTH_TOKEN in .env.microservices}"
+  networks: [services]
+
+services:
+  auth-db:
+    image: ${POSTGRES_IMAGE:-pgvector/pgvector:0.8.7-pg17-bookworm}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: after_sales_auth
+      POSTGRES_USER: after_sales_auth
+      POSTGRES_PASSWORD: "${AUTH_DATABASE_PASSWORD:?Set AUTH_DATABASE_PASSWORD}"
+    ports: ["127.0.0.1:55431:5432"]
+    volumes: [auth-db-data:/var/lib/postgresql/data]
+    networks: [services]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U after_sales_auth -d after_sales_auth"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  auth-service:
+    <<: *app
+    image: after-sales-auth-service:local
+    build:
+      context: .
+      dockerfile: deploy/microservices/Dockerfile
+      args:
+        SERVICE: auth-service
+    environment:
+      <<: *app-env
+      AUTH_DATABASE_URL: jdbc:postgresql://auth-db:5432/after_sales_auth
+      AUTH_DATABASE_USERNAME: after_sales_auth
+      AUTH_DATABASE_PASSWORD: "${AUTH_DATABASE_PASSWORD}"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?Set REDIS_PASSWORD}"
+      SERVER_FORWARD_HEADERS_STRATEGY: native
+      SERVER_TOMCAT_REMOTEIP_REMOTE_IP_HEADER: X-Forwarded-For
+      SERVER_TOMCAT_REMOTEIP_PROTOCOL_HEADER: X-Forwarded-Proto
+      SERVER_TOMCAT_REMOTEIP_INTERNAL_PROXIES: '172[.]30[.]68[.]10'
+      SESSION_COOKIE_SECURE: "${SESSION_COOKIE_SECURE:-false}"
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  order-db:
+    image: ${POSTGRES_IMAGE:-pgvector/pgvector:0.8.7-pg17-bookworm}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: after_sales_order
+      POSTGRES_USER: after_sales_order
+      POSTGRES_PASSWORD: "${ORDER_DATABASE_PASSWORD:?Set ORDER_DATABASE_PASSWORD}"
+    ports: ["127.0.0.1:55432:5432"]
+    volumes: [order-db-data:/var/lib/postgresql/data]
+    networks: [services]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U after_sales_order -d after_sales_order"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  order-service:
+    <<: *app
+    image: after-sales-order-service:local
+    build:
+      context: .
+      dockerfile: deploy/microservices/Dockerfile
+      args:
+        SERVICE: order-service
+    environment:
+      <<: *app-env
+      AGENT_SERVICE_URL: http://agent-service:8080
+      ORDER_DATABASE_URL: jdbc:postgresql://order-db:5432/after_sales_order
+      ORDER_DATABASE_USERNAME: after_sales_order
+      ORDER_DATABASE_PASSWORD: "${ORDER_DATABASE_PASSWORD}"
+    depends_on:
+      order-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+
+  knowledge-db:
+    image: ${POSTGRES_IMAGE:-pgvector/pgvector:0.8.7-pg17-bookworm}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: after_sales_knowledge
+      POSTGRES_USER: after_sales_knowledge
+      POSTGRES_PASSWORD: "${KNOWLEDGE_DATABASE_PASSWORD:?Set KNOWLEDGE_DATABASE_PASSWORD}"
+    ports: ["127.0.0.1:55433:5432"]
+    volumes: [knowledge-db-data:/var/lib/postgresql/data]
+    networks: [services]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U after_sales_knowledge -d after_sales_knowledge"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  knowledge-service:
+    <<: *app
+    image: after-sales-knowledge-service:local
+    build:
+      context: .
+      dockerfile: deploy/microservices/Dockerfile
+      args:
+        SERVICE: knowledge-service
+    environment:
+      <<: *app-env
+      UPLOAD_ROOT: /app/data/uploads
+      KNOWLEDGE_DATABASE_URL: jdbc:postgresql://knowledge-db:5432/after_sales_knowledge
+      KNOWLEDGE_DATABASE_USERNAME: after_sales_knowledge
+      KNOWLEDGE_DATABASE_PASSWORD: "${KNOWLEDGE_DATABASE_PASSWORD}"
+    depends_on:
+      knowledge-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    volumes: [knowledge-uploads:/app/data/uploads]
+
+  agent-db:
+    image: ${POSTGRES_IMAGE:-pgvector/pgvector:0.8.7-pg17-bookworm}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: after_sales_agent
+      POSTGRES_USER: after_sales_agent
+      POSTGRES_PASSWORD: "${AGENT_DATABASE_PASSWORD:?Set AGENT_DATABASE_PASSWORD}"
+    ports: ["127.0.0.1:55434:5432"]
+    volumes: [agent-db-data:/var/lib/postgresql/data]
+    networks: [services]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U after_sales_agent -d after_sales_agent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  agent-service:
+    <<: *app
+    image: after-sales-agent-service:local
+    build:
+      context: .
+      dockerfile: deploy/microservices/Dockerfile
+      args:
+        SERVICE: agent-service
+    environment:
+      <<: *app-env
+      AGENT_DATABASE_URL: jdbc:postgresql://agent-db:5432/after_sales_agent
+      AGENT_DATABASE_USERNAME: after_sales_agent
+      AGENT_DATABASE_PASSWORD: "${AGENT_DATABASE_PASSWORD}"
+      MODEL_MODE: "${MODEL_MODE:-mock}"
+    depends_on:
+      agent-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+
+  redis:
+    image: ${REDIS_IMAGE:-redis:7.4.12-alpine}
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?Set REDIS_PASSWORD}"
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    ports: ["127.0.0.1:56379:6379"]
+    volumes: [micro-redis-data:/data]
+    networks: [services]
+    healthcheck:
+      test: ["CMD-SHELL", 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -qx PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  gateway:
+    image: ${NGINX_IMAGE:-nginx:1.30.6-alpine}
+    restart: unless-stopped
+    ports: ["127.0.0.1:${GATEWAY_PORT:-8080}:80"]
+    volumes:
+      - ./deploy/microservices/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      auth-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      knowledge-service:
+        condition: service_started
+      agent-service:
+        condition: service_started
+    networks:
+      services:
+        ipv4_address: 172.30.68.10
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/gateway-healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+networks:
+  services:
+    ipam:
+      config:
+        - subnet: 172.30.68.0/24
+volumes:
+  auth-db-data:
+  order-db-data:
+  knowledge-db-data:
+  agent-db-data:
+  micro-redis-data:
+  knowledge-uploads:
